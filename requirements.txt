@@ -1,3 +1,4 @@
-requests
-cachetools
 beautifulsoup4
+cachetools
+requests
+pytest
