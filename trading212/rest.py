@@ -2,6 +2,7 @@ import time
 import random
 
 from bs4 import BeautifulSoup
+from ratelimit import limits, sleep_and_retry
 
 
 def validate_account_type(account):
@@ -29,6 +30,12 @@ class Trading212Rest:
         self._application_name = None
         self._application_version = None
 
+    @classmethod
+    @sleep_and_retry
+    @limits(calls=3, period=1)
+    def call_api(cls, session, method, **kwargs):
+        return getattr(session, method)(**kwargs)
+
     def get_rest_url(self, api_endpoint: str = '') -> str:
         return '/'.join([f'https://{self._account_type}.trading212.com', api_endpoint.strip('/')])
 
@@ -44,7 +51,11 @@ class Trading212Rest:
 
     def _account(self, session):
         api_url = self.get_rest_url('/rest/v2/account')
-        r = session.get(api_url, headers=self.get_rest_headers())
+
+        r = self.call_api(
+            session, 'get', url=api_url,
+            headers=self.get_rest_headers()
+        )
 
         r.raise_for_status()
         return r.json()
@@ -75,7 +86,8 @@ class Trading212Rest:
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         }
 
-        r = session.post(
+        r = self.call_api(
+            session, 'post',
             url=self.get_rest_url(),
             data=form_data,
             headers=headers
@@ -102,7 +114,8 @@ class Trading212Rest:
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         }
 
-        r = session.post(
+        r = cls.call_api(
+            session, 'post',
             url=api_url,
             data=form_data,
             headers=headers
@@ -115,7 +128,7 @@ class Trading212Rest:
     def _get_login_token(cls, session):
         api_url = cls.base_url + '/en/login'
 
-        r = session.get(url=api_url)
+        r = cls.call_api(session, 'get', url=api_url)
         r.raise_for_status()
 
         soup = BeautifulSoup(r.text, 'html5lib')
@@ -128,7 +141,8 @@ class Trading212Rest:
     def _batch_rest(self, session, **kwargs):
         api_url = self.get_rest_url('/charting/rest/batch')
 
-        r = session.post(
+        r = self.call_api(
+            session, 'post',
             url=api_url,
             headers=self.get_rest_headers(),
             json=kwargs
@@ -140,8 +154,9 @@ class Trading212Rest:
     def _batch_v2(self, session, **kwargs):
         api_url = self.get_rest_url('/charting/v2/batch')
 
-        r = session.post(
-            api_url,
+        r = self.call_api(
+            session, 'post',
+            url=api_url,
             headers=self.get_rest_headers(),
             json=kwargs
         )
@@ -162,7 +177,8 @@ class Trading212Rest:
             'withFakes': kwargs.get('fakes', False)
         }
 
-        r = session.post(
+        r = self.call_api(
+            session, 'post',
             url=api_url,
             headers=self.get_rest_headers(),
             json=[payload]
@@ -173,7 +189,11 @@ class Trading212Rest:
 
     def _init_info(self, session):
         api_url = self.get_rest_url('/rest/v3/init-info')
-        r = session.get(url=api_url, headers=self.get_rest_headers())
+
+        r = self.call_api(
+            session, 'get', url=api_url,
+            headers=self.get_rest_headers()
+        )
 
         r.raise_for_status()
         return r.json()
@@ -181,7 +201,8 @@ class Trading212Rest:
     def _instrument_settings(self, session, instruments):
         api_url = self.get_rest_url('/rest/v2/account/instruments/settings')
 
-        r = session.post(
+        r = self.call_api(
+            session, 'post',
             url=api_url,
             headers=self.get_rest_headers(),
             json=instruments
@@ -192,7 +213,11 @@ class Trading212Rest:
 
     def _notifications(self, session):
         api_url = self.get_rest_url('/rest/v2/notifications')
-        r = session.get(url=api_url, headers=self.get_rest_headers())
+
+        r = self.call_api(
+            session, 'get', url=api_url,
+            headers=self.get_rest_headers()
+        )
 
         r.raise_for_status()
         return r.json()
@@ -201,7 +226,8 @@ class Trading212Rest:
         api_url = self.get_rest_url('/rest/v2/instruments/price-increments')
         params = {'instrumentCodes': instrument_codes}
 
-        r = session.get(
+        r = self.call_api(
+            session, 'get',
             url=api_url,
             headers=self.get_rest_headers(),
             params=params
@@ -212,7 +238,11 @@ class Trading212Rest:
 
     def _price_alerts(self, session):
         api_url = self.get_rest_url('/rest/v2/price-alerts')
-        r = session.get(api_url, headers=self.get_rest_headers())
+
+        r = self.call_api(
+            session, 'get', url=api_url,
+            headers=self.get_rest_headers()
+        )
 
         r.raise_for_status()
         return r.json()
@@ -221,8 +251,9 @@ class Trading212Rest:
         api_url = self.get_rest_url('/rest/v2/account/switch')
         payload = {'accountId': account_id}
 
-        r = session.post(
-            api_url,
+        r = self.call_api(
+            session, 'post',
+            url=api_url,
             headers=self.get_rest_headers(),
             json=payload
         )
@@ -241,8 +272,9 @@ class Trading212Rest:
             'includeOpen': True
         }
 
-        r = session.get(
-            api_url,
+        r = self.call_api(
+            session, 'get',
+            url=api_url,
             headers=self.get_rest_headers(),
             params=params
         )
@@ -254,7 +286,11 @@ class Trading212Rest:
         api_url = self.get_rest_url(
             f'/user-reports/rest/positionHistory/{position_id}')
 
-        r = session.get(api_url, headers=self.get_rest_headers())
+        r = self.call_api(
+            session, 'get',
+            url=api_url,
+            headers=self.get_rest_headers()
+        )
 
         r.raise_for_status()
         return r.json()
@@ -275,7 +311,8 @@ class Trading212Rest:
         if stop_loss_distance := kwargs.get('stop_distance', False):
             payload['stopDistance'] = stop_loss_distance
 
-        r = session.post(
+        r = self.call_api(
+            session, 'post',
             url=api_url,
             headers=self.get_rest_headers(),
             json=payload
@@ -304,7 +341,8 @@ class Trading212Rest:
             payload['ts'] = {
                 'distance': trailing_distance}
 
-        r = session.put(
+        r = self.call_api(
+            session, 'put',
             url=api_url,
             headers=self.get_rest_headers(),
             json=payload
@@ -317,7 +355,8 @@ class Trading212Rest:
         api_url = self.get_rest_url(
             f'/rest/v2/trading/open-positions/close/{position_id}')
 
-        r = session.delete(
+        r = self.call_api(
+            session, 'delete',
             url=api_url,
             headers=self.get_rest_headers(),
             json={
@@ -344,7 +383,8 @@ class Trading212Rest:
         if stop_loss := kwargs.get('stop_loss', False):
             payload['stopLoss'] = stop_loss
 
-        r = session.post(
+        r = self.call_api(
+            session, 'post',
             url=api_url,
             headers=self.get_rest_headers(),
             json=payload
@@ -369,7 +409,8 @@ class Trading212Rest:
         if stop_loss := kwargs.get('stop_loss', False):
             payload['stopLoss'] = stop_loss
 
-        r = session.put(
+        r = self.call_api(
+            session, 'put',
             url=api_url,
             headers=self.get_rest_headers(),
             json=payload
@@ -382,7 +423,8 @@ class Trading212Rest:
         api_url = self.get_rest_url(
             f'rest/v2/pending-orders/entry/{order_id}')
 
-        r = session.delete(
+        r = self.call_api(
+            session, 'delete',
             url=api_url,
             headers=self.get_rest_headers(),
             json={}

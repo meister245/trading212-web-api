@@ -31,8 +31,13 @@ if __name__ == '__main__':
         install_requires=[
             'requests',
             'cachetools',
-            'beautifulsoup4'
+            'ratelimit',
+            'html5lib',
+            'beautifulsoup4',
         ],
+        extras_require={
+            'dev': ['pytest']
+        },
         python_requires='>=3.8',
         include_package_data=False
     )

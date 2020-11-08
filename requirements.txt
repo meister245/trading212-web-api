@@ -1,4 +1,6 @@
 beautifulsoup4
+html5lib
 cachetools
+ratelimit
 requests
 pytest
