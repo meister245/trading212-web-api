@@ -1,3 +1,4 @@
+import time
 import random
 
 from bs4 import BeautifulSoup
@@ -227,6 +228,165 @@ class Trading212Rest:
         )
 
         self.get_session.cache_clear()
+
+        r.raise_for_status()
+        return r.json()
+
+    def _position(self, session, start, end):
+        api_url = self.get_rest_url('/user-reports/rest/position')
+
+        params = {
+            'from': time.strftime(self.date_format, time.localtime(start)),
+            'to': time.strftime(self.date_format, time.localtime(end)),
+            'includeOpen': True
+        }
+
+        r = session.get(
+            api_url,
+            headers=self.get_rest_headers(),
+            params=params
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _position_history(self, session, position_id):
+        api_url = self.get_rest_url(
+            f'/user-reports/rest/positionHistory/{position_id}')
+
+        r = session.get(api_url, headers=self.get_rest_headers())
+
+        r.raise_for_status()
+        return r.json()
+
+    def _position_open(self, session, instrument, price, quantity, **kwargs):
+        api_url = self.get_rest_url('/rest/v2/trading/open-positions')
+
+        payload = {
+            'instrumentCode': instrument,
+            'notify': 'NONE',
+            'quantity': quantity,
+            'targetPrice': price
+        }
+
+        if take_profit_distance := kwargs.get('limit_distance', False):
+            payload['limitDistance'] = take_profit_distance
+
+        if stop_loss_distance := kwargs.get('stop_distance', False):
+            payload['stopDistance'] = stop_loss_distance
+
+        r = session.post(
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json=payload
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _position_modify(self, session, position_id, **kwargs):
+        api_url = self.get_rest_url(
+            f'/rest/v2/pending-orders/associated/{position_id}')
+
+        payload = {'notify': 'NONE'}
+
+        if take_profit := kwargs.get('take_profit', False):
+            stop_loss = payload.get('tp_sl', {}).get('stopLoss', None)
+            payload['tp_sl'] = {
+                'takeProfit': take_profit, 'stopLoss': stop_loss}
+
+        if stop_loss := kwargs.get('stop_loss', False):
+            take_profit = payload.get('tp_sl', {}).get('takeProfit', None)
+            payload['tp_sl'] = {
+                'takeProfit': take_profit, 'stopLoss': stop_loss}
+
+        if trailing_distance := kwargs.get('trailing_distance', False):
+            payload['ts'] = {
+                'distance': trailing_distance}
+
+        r = session.put(
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json=payload
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _position_close(self, session, position_id):
+        api_url = self.get_rest_url(
+            f'/rest/v2/trading/open-positions/close/{position_id}')
+
+        r = session.delete(
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json={
+                'targetPrice': None
+            }
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _order_open(self, session, instrument, price, quantity, **kwargs):
+        api_url = self.get_rest_url(
+            f'rest/v2/pending-orders/entry-dep-limit-stop/{instrument}')
+
+        payload = {
+            'notify': 'NONE',
+            'quantity': quantity,
+            'targetPrice': price
+        }
+
+        if take_profit := kwargs.get('take_profit', False):
+            payload['takeProfit'] = take_profit
+
+        if stop_loss := kwargs.get('stop_loss', False):
+            payload['stopLoss'] = stop_loss
+
+        r = session.post(
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json=payload
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _order_modify(self, session, order_id, price, quantity, **kwargs):
+        api_url = self.get_rest_url(
+            f'rest/v2/pending-orders/entry-dep-limit-stop/{order_id}')
+
+        payload = {
+            'notify': 'NONE',
+            'quantity': quantity,
+            'targetPrice': price
+        }
+
+        if take_profit := kwargs.get('take_profit', False):
+            payload['takeProfit'] = take_profit
+
+        if stop_loss := kwargs.get('stop_loss', False):
+            payload['stopLoss'] = stop_loss
+
+        r = session.put(
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json=payload
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _order_delete(self, session, order_id):
+        api_url = self.get_rest_url(
+            f'rest/v2/pending-orders/entry/{order_id}')
+
+        r = session.delete(
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json={}
+        )
 
         r.raise_for_status()
         return r.json()

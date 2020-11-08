@@ -99,7 +99,13 @@ class Trading212Client(Trading212Rest):
         return self._account(self.get_session())
 
     def switch_account(self, account_type='demo', trading_type='equity') -> dict:
-        accounts = self.get_accounts()
+        session = self.get_session()
+        init_info = self._init_info(session)
+
+        accounts = {
+            'demo': init_info['customer']['demoAccounts'],
+            'live': init_info['customer']['liveAccounts']
+        }
 
         if account_type.lower() == 'demo':
             for account in accounts['demo']:

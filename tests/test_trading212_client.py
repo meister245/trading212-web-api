@@ -75,12 +75,6 @@ class TestClient:
         data = client.get_init_info()
         assert isinstance(data, dict)
 
-    def test_accounts(self, client):
-        data = client.get_accounts()
-
-        assert 'demo' in data and isinstance(data['demo'], list)
-        assert 'live' in data and isinstance(data['live'], list)
-
     def test_batch_deviations(self, client):
         data = client.batch(deviations=[
             {
