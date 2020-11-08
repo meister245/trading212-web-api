@@ -15,7 +15,7 @@ def client():
     )
 
 
-class TestTrading212Client:
+class TestClient:
 
     def test_init(self):
         client = Trading212Client('example_user', 'example_pass')
@@ -57,8 +57,10 @@ class TestTrading212Client:
 
     def test_rest_url(self, client):
         assert client.get_rest_url() == 'https://demo.trading212.com/'
-        assert client.get_rest_url('example') == 'https://demo.trading212.com/example'
-        assert client.get_rest_url('/example') == 'https://demo.trading212.com/example'
+        assert client.get_rest_url(
+            'example') == 'https://demo.trading212.com/example'
+        assert client.get_rest_url(
+            '/example') == 'https://demo.trading212.com/example'
 
     def test_rest_headers(self, client):
         headers = client.get_rest_headers()
@@ -148,12 +150,12 @@ class TestTrading212Client:
     def test_notifications(self, client):
         data = client.get_notifications()
 
-        assert isinstance(data, list) and data == []
+        assert isinstance(data, list)
 
     def test_price_alerts(self, client):
         data = client.get_price_alerts()
 
-        assert isinstance(data, list) and data == []
+        assert isinstance(data, list)
 
     def test_account(self, client):
         data = client.get_account()
@@ -164,3 +166,11 @@ class TestTrading212Client:
         data = client.switch_account(account_type='demo', trading_type='cfd')
 
         assert isinstance(data, dict)
+
+    def test_market_price(self, client):
+        bid, ask = client.get_market_price('BTCUSD')
+
+        assert isinstance(bid, dict) and len(bid) == 4 and \
+            isinstance(ask, dict) and len(bid) == 4 and \
+            list(bid) == ['open', 'high', 'low', 'close'] and \
+            list(ask) == ['open', 'high', 'low', 'close']

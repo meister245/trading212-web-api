@@ -76,11 +76,15 @@ class Trading212Client(Trading212Rest):
             'live': init_info['customer']['liveAccounts']
         }
 
-    def get_instrument_settings(self, instrument: list) -> dict:
+    def get_instrument_settings(self, instrument: list) -> list:
         return self._instrument_settings(self.get_session(), instrument)
 
     def get_candles(self, instrument: str, period: int = 60, **kwargs) -> dict:
         return self._candles(self.get_session(), instrument, period, **kwargs)[0]
+
+    def get_market_price(self, instrument: str) -> dict:
+        data = self.get_candles(instrument=instrument, period=5, limit=1)
+        return data['candles'][0]['bid'], data['candles'][0]['ask']
 
     def get_notifications(self) -> dict:
         return self._notifications(self.get_session())
