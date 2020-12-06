@@ -10,4 +10,4 @@ job_test:
   stage: test
   script:
     - pip install -r requirements.txt
-    - py.test tests/
+    - py.test tests/ -v
