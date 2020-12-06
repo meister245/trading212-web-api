@@ -23,6 +23,8 @@ class Trading212Rest:
         10080: 'ONE_WEEK', 0: 'ONE_MONTH'
     }
 
+    time_valid_choices = ('DAY', 'GOOD_TILL_CANCEL')
+
     def __init__(self, account='demo'):
         self._account_id = None
         self._account_type = validate_account_type(account)
@@ -422,6 +424,78 @@ class Trading212Rest:
     def _order_delete(self, session, order_id):
         api_url = self.get_rest_url(
             f'rest/v2/pending-orders/entry/{order_id}')
+
+        r = self.call_api(
+            session, 'delete',
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json={}
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _equity_order_open(self, session, instrument, quantity, **kwargs):
+        api_url = self.get_rest_url('rest/public/v2/equity/order')
+
+        payload = {
+            'instrumentCode': instrument,
+            'quantity': quantity,
+            'orderType': 'MARKET'
+        }
+
+        if limit_price := kwargs.get('limit_price', False):
+            payload['stopPrice'] = payload.get('stopPrice', None)
+            payload['limitPrice'] = limit_price
+
+        if stop_price := kwargs.get('stop_price', False):
+            payload['limitPrice'] = payload.get('limitPrice', None)
+            payload['stopPrice'] = stop_price
+
+        if limit_price or stop_price:
+            time_valid = kwargs.get('time_valid', 'DAY')
+
+            if time_valid.upper() not in self.time_valid_choices:
+                raise ValueError(f'invalid time validity - {time_valid}')
+
+            payload['orderType'] = 'LIMIT'
+            payload['timeValidity'] = time_valid.upper()
+
+        r = self.call_api(
+            session, 'post',
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json=payload
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _equity_order_modify(self, session, order_id, quantity, **kwargs):
+        api_url = self.get_rest_url(
+            f'rest/public/v2/equity/order/{order_id}')
+
+        payload = {'quantity': quantity}
+
+        if limit_price := kwargs.get('limit_price', False):
+            payload['limitPrice'] = limit_price
+
+        if stop_price := kwargs.get('stop_price', False):
+            payload['stopPrice'] = stop_price
+
+        r = self.call_api(
+            session, 'put',
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json=payload
+        )
+
+        r.raise_for_status()
+        return r.json()
+
+    def _equity_order_close(self, session, order_id):
+        api_url = self.get_rest_url(
+            f'rest/public/v2/equity/order/{order_id}')
 
         r = self.call_api(
             session, 'delete',
