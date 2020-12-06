@@ -1,0 +1,13 @@
+image: python:3-slim
+
+stages:
+  - test
+
+before_script:
+  - python -V
+
+job_test:
+  stage: test
+  script:
+    - pip install -r requirements.txt
+    - py.test tests/
