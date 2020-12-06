@@ -376,7 +376,9 @@ class Trading212Rest:
         payload = {
             'notify': 'NONE',
             'quantity': quantity,
-            'targetPrice': price
+            'targetPrice': price,
+            'stopLoss': None,
+            'takeProfit': None
         }
 
         if take_profit := kwargs.get('take_profit', False):
