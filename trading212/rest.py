@@ -41,8 +41,21 @@ class Trading212Rest:
     def get_rest_url(self, api_endpoint: str = '') -> str:
         return '/'.join([f'https://{self._account_type}.trading212.com', api_endpoint.strip('/')])
 
+    @staticmethod
+    def get_generic_headers() -> dict:
+        return {
+            'Connection': 'keep-alive',
+            'Host': 'www.trading212.com',
+            'Origin': 'https://www.trading212.com',
+            'Referer': 'https://www.trading212.com/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/86.0.4240.198 Safari/537.36'
+        }
+
     def get_rest_headers(self) -> dict:
         return {
+            **self.get_generic_headers(),
             'Host': f'{self._account_type}.trading212.com',
             'Origin': f'https://{self._account_type}.trading212.com',
             'Referer': f'https://{self._account_type}.trading212.com/',
@@ -82,9 +95,7 @@ class Trading212Rest:
         }
 
         headers = {
-            'Host': 'www.trading212.com',
-            'Origin': 'https://www.trading212.com',
-            'Referer': 'https://www.trading212.com/',
+            **self.get_generic_headers(),
             'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
         }
 
