@@ -17,6 +17,13 @@ def client():
     )
 
 
+@pytest.fixture()
+def cleanup_session(client):
+    yield
+    client.logout()
+
+
+@pytest.mark.usefixtures('cleanup_session')
 class TestCFDMarketPosition:
 
     def test_market_position_buy_with_mandatory_parameters(self, client):
@@ -242,6 +249,7 @@ class TestCFDMarketPosition:
         client.close_position(position['positionId'])
 
 
+@pytest.mark.usefixtures('cleanup_session')
 class TestCFDLimitOrder:
 
     def test_limit_order_buy_with_mandatory_parameters(self, client):

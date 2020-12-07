@@ -98,6 +98,9 @@ class Trading212Client(Trading212Rest):
     def get_account(self) -> dict:
         return self._account(self.get_session())
 
+    def logout(self):
+        return self._logout(self.get_session())
+
     def switch_account(self, account_type='demo', trading_type='equity') -> dict:
         session = self.get_session()
         init_info = self._init_info(session)

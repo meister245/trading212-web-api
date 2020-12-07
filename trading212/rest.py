@@ -213,6 +213,21 @@ class Trading212Rest:
         r.raise_for_status()
         return r.json()
 
+    def _logout(self, session):
+        api_url = self.get_rest_url('/rest/v1/logout')
+
+        r = self.call_api(
+            session, 'put',
+            url=api_url,
+            headers=self.get_rest_headers(),
+            json={}
+        )
+
+        self.get_session.cache_clear()
+
+        r.raise_for_status()
+        return r.text
+
     def _notifications(self, session):
         api_url = self.get_rest_url('/rest/v2/notifications')
 

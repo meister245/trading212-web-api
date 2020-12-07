@@ -15,6 +15,13 @@ def client():
     )
 
 
+@pytest.fixture()
+def cleanup_session(client):
+    yield
+    client.logout()
+
+
+@pytest.mark.usefixtures('cleanup_session')
 class TestClient:
 
     def test_init(self):
